@@ -1,6 +1,7 @@
 const express = require("express");
 const users = require("./MOCK_DATA.json")
-const fs = require("fs")
+const fs = require("fs");
+const { error } = require("console");
 
 const app = express();
 const PORT = 8000;
@@ -14,11 +15,6 @@ app.use((req,res,next)=>{
       next();
     }
   )
-})
-
-app.use((req,res,next)=>{
-  console.log("Hello from middleware 2");
-  next();
 })
 
 
@@ -37,9 +33,11 @@ app.get('/api/users',(req,res)=>{
   return res.json(users)
 })
 
-app.route('/api/users/:id').get((req,res)=>{
+app.route('/api/users/:id')
+  .get((req,res)=>{
   const id = Number (req.params.id);
   const user = users.find((user)=> user.id === id);
+  if(!user) return res.status(404).json({error: "user not found" });
   return res.json(user)
 })
 .delete ((req,res)=>{
@@ -53,7 +51,7 @@ app.post('/api/users', (req,res)=>{
   const body  = req.body;
   users.push({...body,id:users.length+1});
   fs.writeFile('./MOCK_DATA.json',JSON.stringify(users),(err,data)=>{
-    return res.json({status: "success",id: users.length})
+    return res.status(201).json({status: "success",id: users.length})
   })
   
 });
