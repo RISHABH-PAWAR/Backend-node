@@ -5,13 +5,15 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon 01project/index.js"
+    "start": "nodemon 02urlShortner/index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "express": "^5.1.0",
     "mongoose": "^8.20.0",
-    "nodemon": "^3.1.11"
+    "nanoid": "^5.1.6",
+    "nodemon": "^3.1.11",
+    "shortid": "^2.2.17"
   }
 }
