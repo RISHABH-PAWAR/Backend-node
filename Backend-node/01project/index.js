@@ -1,61 +1,20 @@
 const express = require("express");
-const users = require("./MOCK_DATA.json")
+const {connectMongoDb} = require("./connection")
+const {logReqRes} = require("./middlewares")
 const fs = require("fs");
-const { error } = require("console");
+
+const userRouter = require('./routes/users')
 
 const app = express();
 const PORT = 8000;
 
+connectMongoDb();
+
 app.use(express.urlencoded({extended: false}))
 
-app.use((req,res,next)=>{
-  fs.appendFile('log.txt',
-    `${Date.now()}: ${req.method}: ${req.path}\n`,
-    (err,data)=>{
-      next();
-    }
-  )
-})
+app.use(logReqRes("log.txt"));
 
-
-app.get('/users',(req,res)=>{
-  const html =`
-  <ul>
-    ${users.map((user)=>`<li>${user.first_name}</li>`).join("")}
-  </ul>
-  `;
-  res.send(html)
-})
-
-// REST api
-app.get('/api/users',(req,res)=>{
-  res.setHeader("X-myName" , "Rishabh")
-  return res.json(users)
-})
-
-app.route('/api/users/:id')
-  .get((req,res)=>{
-  const id = Number (req.params.id);
-  const user = users.find((user)=> user.id === id);
-  if(!user) return res.status(404).json({error: "user not found" });
-  return res.json(user)
-})
-.delete ((req,res)=>{
-  return res.json ({status:"pending"})
-})
-.patch ((req,res)=>{
-  return res.json ({status:"pending"})
-})
-
-app.post('/api/users', (req,res)=>{
-  const body  = req.body;
-  users.push({...body,id:users.length+1});
-  fs.writeFile('./MOCK_DATA.json',JSON.stringify(users),(err,data)=>{
-    return res.status(201).json({status: "success",id: users.length})
-  })
-  
-});
-
+app.use("/api/users",userRouter);
 
 
 app.listen(PORT,() => console.log(`Server started at port ${PORT}`))
