@@ -1,42 +1,47 @@
 const express = require("express");
-const path = require("path")
-const urlRoute = require("./routes/url")
-const URL = require("./models/url")
-const {connectTOMongoDB} = require("./connect")
+const path = require("path");
+const cookieParser = require("cookie-parser");
+const { connectToMongoDB } = require("./connect");
+const { restrictToLoggedinUserOnly, checkAuth } = require("./middlewares/auth");
+const URL = require("./models/url");
+
+const urlRoute = require("./routes/url");
+const staticRoute = require("../routes/staticRouter.js");
+const userRoute = require("./routes/user");
 
 const app = express();
 const PORT = 8001;
 
+connectToMongoDB(process.env.MONGODB ?? "mongodb://localhost:27017/short-url").then(() =>
+  console.log("Mongodb connected")
+);
 
-connectTOMongoDB("mongodb+srv://rishabhrajput245304_db_user:UI0W07V2qtgyQQoh@urlshortner.ubcmhqm.mongodb.net/?appName=urlShortner")
-.then(()=> console.log("MongoDB is connected"));
+app.set("view engine", "ejs");
+app.set("views", path.resolve("./views"));
 
-app.set("view engine","ejs");
-app.set("views",path.resolve("./views"))
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 
-app.use(express.json())
+app.use("/url", restrictToLoggedinUserOnly, urlRoute);
+app.use("/user", userRoute);
+app.use("/", checkAuth, staticRoute);
 
-app.get("/test" async(req,res)=>{
-  const allUrls = await URL.find({});
-  return res.render("home",{
-    urls: allUrls,
-    
-  })
-})
-
-app.get("/:shortId",async(req,res)=>{
+app.get("/url/:shortId", async (req, res) => {
   const shortId = req.params.shortId;
-  const entry = await URL.findOneAndUpdate({
-    shortId
-  },{
-    $push:{
-      visitHistory: {
-        timestamp: Date.now()
-      },
+  const entry = await URL.findOneAndUpdate(
+    {
+      shortId,
     },
-  })
-  res.redirect(entry.redirectURL)
-})
+    {
+      $push: {
+        visitHistory: {
+          timestamp: Date.now(),
+        },
+      },
+    }
+  );
+  res.redirect(entry.redirectURL);
+});
 
-app.use("/url" , urlRoute)
-app.listen(PORT , ()=> console.log("Server is started at PORT 8001"))
+app.listen(PORT, () => console.log(`Server Started at PORT:${PORT}`));
